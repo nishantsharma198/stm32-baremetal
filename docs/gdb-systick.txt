@@ -1,0 +1,47 @@
+arm-none-eabi-gdb -q -batch -x scripts/systick.gdb firmware.elf
+Reset_Handler () at startup/startup_stm32f4.s:74
+74	    ldr r0, =_sidata       /* Source address in FLASH */
+
+=== 1. At reset: vector table, SP and PC ===
+0x8000000:	0x20020000	0x08000129
+$1 = 0x20020000
+$2 = 0x8000129
+sp             0x20020000          0x20020000
+pc             0x8000128           0x8000128 <Reset_Handler>
+
+=== 2. At main: .data copied, .bss cleared ===
+Breakpoint 1 at 0x80000c0: file src/main.c, line 41.
+
+Breakpoint 1, main () at src/main.c:41
+41	    sh_puts("Boot OK! Entering main...\r\n");
+0x8000226:	0x0000007b
+0x20000000 <initialized>:	0x0000007b
+$3 = 123
+$4 = 0
+$5 = 0
+
+=== 3. First SysTick interrupt ===
+Breakpoint 2 at 0x8000080: file src/main.c, line 30.
+
+Breakpoint 2, SysTick_Handler () at src/main.c:30
+30	    systick_counter++;
+sp             0x2001ffd0          0x2001ffd0
+lr             0xfffffff9          -7
+xpsr           0x100000f           16777231
+#0  SysTick_Handler () at src/main.c:30
+#1  <signal handler called>
+#2  0x08000100 in main () at src/main.c:65
+33	    if ((systick_counter % 1000) == 0)
+$6 = 1
+
+=== 4. After 1000 SysTick interrupts ===
+Breakpoint 3 at 0x8000080: file src/main.c, line 30.
+
+Breakpoint 3, SysTick_Handler () at src/main.c:30
+30	    systick_counter++;
+33	    if ((systick_counter % 1000) == 0)
+$7 = 1000
+0xe000e010:	0x00010007	0x00003e7f	0x00003dc6
+
+=== Done ===
+[Inferior 1 (process 1) killed]
